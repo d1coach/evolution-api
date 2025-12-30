@@ -10,7 +10,8 @@
       "WebFetch(domain:easypanel.io)",
       "WebFetch(domain:github.com)",
       "WebFetch(domain:deepwiki.com)",
-      "WebFetch(domain:raw.githubusercontent.com)"
+      "WebFetch(domain:raw.githubusercontent.com)",
+      "Bash(npm run build:*)"
     ]
   }
 }

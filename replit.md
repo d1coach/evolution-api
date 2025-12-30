@@ -27,6 +27,16 @@ The application is configured via environment variables. Key settings include:
 - `AUTHENTICATION_API_KEY` - API key for authentication
 - `CORS_ORIGIN=*` - CORS configuration
 
+### Redis Cache Configuration
+
+Redis is used for caching WhatsApp session data and improving performance:
+
+- `CACHE_REDIS_ENABLED=true` - Enable Redis caching
+- `CACHE_REDIS_URI=redis://localhost:6379` - Redis connection string
+- `CACHE_REDIS_PREFIX_KEY=evolution-cache` - Key prefix for Redis entries
+- `CACHE_REDIS_TTL=604800` - Cache TTL in seconds (default: 7 days)
+- `CACHE_REDIS_SAVE_INSTANCES=true` - Save WhatsApp instances in Redis
+
 ## Running the Application
 
 - Development: `npm run start` (uses tsx to run TypeScript directly)

@@ -4,6 +4,7 @@ expertMode = true
 
 [nix]
 channel = "stable-25_05"
+packages = ["redis"]
 
 [userenv]
 
@@ -29,8 +30,8 @@ DATABASE_SAVE_DATA_LABELS = "true"
 DATABASE_SAVE_IS_ON_WHATSAPP = "true"
 DATABASE_SAVE_IS_ON_WHATSAPP_DAYS = "7"
 DATABASE_DELETE_MESSAGE = "false"
-CACHE_REDIS_ENABLED = "false"
-CACHE_LOCAL_ENABLED = "true"
+CACHE_REDIS_ENABLED = "true"
+CACHE_LOCAL_ENABLED = "false"
 CACHE_LOCAL_TTL = "86400"
 AUTHENTICATION_API_KEY = "evolution-api-key"
 AUTHENTICATION_EXPOSE_IN_FETCH_INSTANCES = "false"
@@ -68,6 +69,10 @@ WA_BUSINESS_VERSION = "v18.0"
 WA_BUSINESS_LANGUAGE = "en"
 EVENT_EMITTER_MAX_LISTENERS = "50"
 DATABASE_CONNECTION_URI = "postgresql://postgres:password@helium/heliumdb?sslmode=disable"
+CACHE_REDIS_URI = "redis://localhost:6379"
+CACHE_REDIS_PREFIX_KEY = "evolution-cache"
+CACHE_REDIS_TTL = "604800"
+CACHE_REDIS_SAVE_INSTANCES = "true"
 
 [workflows]
 runButton = "Project"
@@ -85,17 +90,21 @@ args = "Evolution API"
 name = "Evolution API"
 author = "agent"
 
-[[workflows.workflow.tasks]]
-task = "shell.exec"
-args = "npm run start"
-waitForPort = 5000
-
 [workflows.workflow.metadata]
 outputType = "webview"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "redis-server --daemonize yes && npm run start"
+waitForPort = 5000
 
 [[ports]]
 localPort = 5000
 externalPort = 80
+
+[[ports]]
+localPort = 6379
+externalPort = 3000
 
 [deployment]
 deploymentTarget = "autoscale"

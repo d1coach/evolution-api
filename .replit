@@ -1,0 +1,103 @@
+modules = ["nodejs-20", "bash"]
+[agent]
+expertMode = true
+
+[nix]
+channel = "stable-25_05"
+
+[userenv]
+
+[userenv.shared]
+SERVER_NAME = "evolution"
+SERVER_TYPE = "http"
+SERVER_PORT = "5000"
+SERVER_URL = "https://d13b08b2-bc04-4eae-9f29-a5c500046dcd-00-1pg4nk1zh02m7.worf.replit.dev"
+SERVER_DISABLE_DOCS = "false"
+SERVER_DISABLE_MANAGER = "false"
+CORS_ORIGIN = "*"
+CORS_METHODS = "POST,GET,PUT,DELETE"
+CORS_CREDENTIALS = "true"
+DATABASE_PROVIDER = "postgresql"
+DATABASE_CONNECTION_CLIENT_NAME = "evolution"
+DATABASE_SAVE_DATA_INSTANCE = "true"
+DATABASE_SAVE_DATA_NEW_MESSAGE = "true"
+DATABASE_SAVE_MESSAGE_UPDATE = "true"
+DATABASE_SAVE_DATA_CONTACTS = "true"
+DATABASE_SAVE_DATA_CHATS = "true"
+DATABASE_SAVE_DATA_HISTORIC = "true"
+DATABASE_SAVE_DATA_LABELS = "true"
+DATABASE_SAVE_IS_ON_WHATSAPP = "true"
+DATABASE_SAVE_IS_ON_WHATSAPP_DAYS = "7"
+DATABASE_DELETE_MESSAGE = "false"
+CACHE_REDIS_ENABLED = "false"
+CACHE_LOCAL_ENABLED = "true"
+CACHE_LOCAL_TTL = "86400"
+AUTHENTICATION_API_KEY = "evolution-api-key"
+AUTHENTICATION_EXPOSE_IN_FETCH_INSTANCES = "false"
+LOG_LEVEL = "ERROR,WARN,DEBUG,INFO,LOG,VERBOSE,DARK,WEBHOOKS,WEBSOCKET"
+LOG_COLOR = "true"
+LOG_BAILEYS = "error"
+DEL_INSTANCE = "false"
+DEL_TEMP_INSTANCES = "true"
+LANGUAGE = "en"
+WEBHOOK_GLOBAL_ENABLED = "false"
+WEBSOCKET_ENABLED = "true"
+WEBSOCKET_GLOBAL_EVENTS = "true"
+RABBITMQ_ENABLED = "false"
+NATS_ENABLED = "false"
+SQS_ENABLED = "false"
+PUSHER_ENABLED = "false"
+TYPEBOT_ENABLED = "false"
+CHATWOOT_ENABLED = "false"
+OPENAI_ENABLED = "false"
+DIFY_ENABLED = "false"
+N8N_ENABLED = "false"
+EVOAI_ENABLED = "false"
+FLOWISE_ENABLED = "false"
+S3_ENABLED = "false"
+PROMETHEUS_METRICS = "false"
+TELEMETRY_ENABLED = "false"
+PROVIDER_ENABLED = "false"
+CONFIG_SESSION_PHONE_CLIENT = "Evolution API"
+CONFIG_SESSION_PHONE_NAME = "Chrome"
+QRCODE_LIMIT = "30"
+QRCODE_COLOR = "#198754"
+WA_BUSINESS_TOKEN_WEBHOOK = "evolution"
+WA_BUSINESS_URL = "https://graph.facebook.com"
+WA_BUSINESS_VERSION = "v18.0"
+WA_BUSINESS_LANGUAGE = "en"
+EVENT_EMITTER_MAX_LISTENERS = "50"
+DATABASE_CONNECTION_URI = "postgresql://postgres:password@helium/heliumdb?sslmode=disable"
+
+[workflows]
+runButton = "Project"
+
+[[workflows.workflow]]
+name = "Project"
+mode = "parallel"
+author = "agent"
+
+[[workflows.workflow.tasks]]
+task = "workflow.run"
+args = "Evolution API"
+
+[[workflows.workflow]]
+name = "Evolution API"
+author = "agent"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "npm run start"
+waitForPort = 5000
+
+[workflows.workflow.metadata]
+outputType = "webview"
+
+[[ports]]
+localPort = 5000
+externalPort = 80
+
+[deployment]
+deploymentTarget = "autoscale"
+run = ["npm", "run", "start:prod"]
+build = ["npm", "run", "build"]

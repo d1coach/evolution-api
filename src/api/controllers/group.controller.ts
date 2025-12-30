@@ -9,6 +9,7 @@ import {
   GroupSendInvite,
   GroupSubjectDto,
   GroupToggleEphemeralDto,
+  GroupUpdateJoinRequestDto,
   GroupUpdateParticipantDto,
   GroupUpdateSettingDto,
 } from '@api/dto/group.dto';
@@ -68,6 +69,10 @@ export class GroupController {
 
   public async updateGParticipate(instance: InstanceDto, update: GroupUpdateParticipantDto) {
     return await this.waMonitor.waInstances[instance.instanceName].updateGParticipant(update);
+  }
+
+  public async updateJoinRequest(instance: InstanceDto, update: GroupUpdateJoinRequestDto) {
+    return await this.waMonitor.waInstances[instance.instanceName].updateJoinRequest(update);
   }
 
   public async updateGSetting(instance: InstanceDto, update: GroupUpdateSettingDto) {

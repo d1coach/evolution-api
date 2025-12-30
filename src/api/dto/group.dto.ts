@@ -47,6 +47,11 @@ export class GroupUpdateParticipantDto extends GroupJid {
   participants: string[];
 }
 
+export class GroupUpdateJoinRequestDto extends GroupJid {
+  action: 'approve' | 'reject';
+  participants: string[];
+}
+
 export class GroupUpdateSettingDto extends GroupJid {
   action: 'announcement' | 'not_announcement' | 'unlocked' | 'locked';
 }

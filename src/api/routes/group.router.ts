@@ -10,6 +10,7 @@ import {
   GroupSendInvite,
   GroupSubjectDto,
   GroupToggleEphemeralDto,
+  GroupUpdateJoinRequestDto,
   GroupUpdateParticipantDto,
   GroupUpdateSettingDto,
 } from '@api/dto/group.dto';
@@ -25,6 +26,7 @@ import {
   updateGroupDescriptionSchema,
   updateGroupPictureSchema,
   updateGroupSubjectSchema,
+  updateJoinRequestSchema,
   updateParticipantsSchema,
   updateSettingsSchema,
 } from '@validate/validate.schema';
@@ -165,6 +167,16 @@ export class GroupRouter extends RouterBroker {
         });
 
         res.status(HttpStatus.CREATED).json(response);
+      })
+      .post(this.routerPath('updateJoinRequest'), ...guards, async (req, res) => {
+        const response = await this.groupValidate<GroupUpdateJoinRequestDto>({
+          request: req,
+          schema: updateJoinRequestSchema,
+          ClassRef: GroupUpdateJoinRequestDto,
+          execute: (instance, data) => groupController.updateJoinRequest(instance, data),
+        });
+
+        res.status(HttpStatus.OK).json(response);
       })
       .post(this.routerPath('updateSetting'), ...guards, async (req, res) => {
         const response = await this.groupValidate<GroupUpdateSettingDto>({

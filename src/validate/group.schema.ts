@@ -131,6 +131,31 @@ export const updateParticipantsSchema: JSONSchema7 = {
   ...isNotEmpty('groupJid', 'action'),
 };
 
+export const updateJoinRequestSchema: JSONSchema7 = {
+  $id: v4(),
+  type: 'object',
+  properties: {
+    groupJid: { type: 'string' },
+    action: {
+      type: 'string',
+      enum: ['approve', 'reject'],
+    },
+    participants: {
+      type: 'array',
+      minItems: 1,
+      uniqueItems: true,
+      items: {
+        type: 'string',
+        minLength: 10,
+        pattern: '\\d+',
+        description: '"participants" must be an array of numeric strings',
+      },
+    },
+  },
+  required: ['groupJid', 'action', 'participants'],
+  ...isNotEmpty('groupJid', 'action'),
+};
+
 export const updateSettingsSchema: JSONSchema7 = {
   $id: v4(),
   type: 'object',

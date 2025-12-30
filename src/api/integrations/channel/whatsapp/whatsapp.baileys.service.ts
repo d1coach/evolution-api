@@ -26,6 +26,7 @@ import {
   GroupSendInvite,
   GroupSubjectDto,
   GroupToggleEphemeralDto,
+  GroupUpdateJoinRequestDto,
   GroupUpdateParticipantDto,
   GroupUpdateSettingDto,
 } from '@api/dto/group.dto';
@@ -4648,6 +4649,20 @@ export class BaileysStartupService extends ChannelStartupService {
       return { updateParticipants: updateParticipants };
     } catch (error) {
       throw new BadRequestException('Error updating participants', error.toString());
+    }
+  }
+
+  public async updateJoinRequest(update: GroupUpdateJoinRequestDto) {
+    try {
+      const participants = update.participants.map((p) => createJid(p));
+      const result = await this.client.groupRequestParticipantsUpdate(
+        update.groupJid,
+        participants,
+        update.action,
+      );
+      return { updateJoinRequest: result };
+    } catch (error) {
+      throw new BadRequestException('Error updating join request', error.toString());
     }
   }
 

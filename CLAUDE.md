@@ -1,15 +1,15 @@
 # CLAUDE.md
 
-This file provides comprehensive guidance to Claude AI when working with the Evolution API codebase.
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
 ## Project Overview
 
-**Evolution API** is a powerful, production-ready REST API for WhatsApp communication that supports multiple WhatsApp providers:
-- **Baileys** (WhatsApp Web) - Open-source WhatsApp Web client
+**Evolution API** is a production-ready REST API for WhatsApp communication supporting multiple providers:
+- **Baileys** - WhatsApp Web client (QR code authentication)
 - **Meta Business API** - Official WhatsApp Business API
 - **Evolution API** - Custom WhatsApp integration
 
-Built with **Node.js 20+**, **TypeScript 5+**, and **Express.js**, it provides extensive integrations with chatbots, CRM systems, and messaging platforms in a **multi-tenant architecture**.
+Built with Node.js 20+, TypeScript 5+, Express.js. Multi-tenant architecture with chatbot, CRM, and messaging platform integrations.
 
 ## Common Development Commands
 
@@ -51,24 +51,19 @@ npm run db:migrate:dev:win  # Windows
 
 # Open Prisma Studio
 npm run db:studio
-
-# Development migrations
-npm run db:migrate:dev      # Unix/Mac
-npm run db:migrate:dev:win  # Windows
 ```
 
 ### Testing
 ```bash
-npm test    # Run tests with watch mode
+npm test    # Run tests with watch mode (minimal test infrastructure currently)
 ```
 
 ## Architecture Overview
 
 ### Core Structure
 - **Multi-tenant SaaS**: Complete instance isolation with per-tenant authentication
-- **Multi-provider database**: PostgreSQL and MySQL via Prisma ORM with provider-specific schemas and migrations
-- **WhatsApp integrations**: Baileys, Meta Business API, and Evolution API with unified interface
-- **Event-driven architecture**: EventEmitter2 for internal events + WebSocket, RabbitMQ, SQS, NATS, Pusher for external events
+- **Multi-provider database**: PostgreSQL and MySQL via Prisma ORM with provider-specific schemas
+- **Event-driven**: EventEmitter2 internally + WebSocket, RabbitMQ, SQS, NATS, Pusher externally
 - **Microservices pattern**: Modular integrations for chatbots, storage, and external services
 
 ### Directory Layout
@@ -137,87 +132,57 @@ src/
 - **Rate limiting** and security middleware
 - **Webhook signature validation** for external integrations
 
-## Important Implementation Details
+## Key Implementation Patterns
 
 ### WhatsApp Instance Management
 - Each WhatsApp connection is an "instance" with unique name
-- Instance data stored in database with connection state
 - Session persistence in database or file system (configurable)
-- Automatic reconnection handling with exponential backoff
+- Automatic reconnection with exponential backoff
 
-### Message Queue Architecture
-- Supports RabbitMQ, Amazon SQS, and WebSocket for events
-- Event types: message.received, message.sent, connection.update, etc.
-- Configurable per instance which events to send
+### RouterBroker Pattern
+Routes extend `RouterBroker` and use `dataValidate` for request handling:
+```typescript
+.post(this.routerPath('createExample'), ...guards, async (req, res) => {
+  const response = await this.dataValidate<ExampleDto>({
+    request: req,
+    schema: exampleSchema,  // JSONSchema7 validation
+    ClassRef: ExampleDto,
+    execute: (instance, data) => controller.create(instance, data),
+  });
+  return res.status(HttpStatus.CREATED).json(response);
+})
+```
 
-### Media Handling
-- Local storage or S3/Minio for media files
-- Automatic media download from WhatsApp
-- Media URL generation for external access
-- Support for audio transcription via OpenAI
+### Service Layer Pattern
+Services access WhatsApp instances via `WAMonitoringService`:
+```typescript
+export class ExampleService {
+  constructor(private readonly waMonitor: WAMonitoringService) {}
 
-### Multi-tenancy Support
-- Instance isolation at database level
-- Separate webhook configurations per instance
-- Independent integration settings per instance
+  public async operation(instance: InstanceDto, data: DataDto) {
+    await this.waMonitor.waInstances[instance.instanceName].performAction(data);
+    return { result: { ...instance, data } };
+  }
+}
+```
+
+### Guards System
+Standard guard chain: `[instanceExistsGuard, instanceLoggedGuard, authGuard['apikey']]`
 
 ## Environment Configuration
 
-Key environment variables are defined in `.env.example`. The system uses a strongly-typed configuration system via `src/config/env.config.ts`.
-
-Critical configurations:
+Key environment variables defined in `.env.example`, typed via `src/config/env.config.ts`:
 - `DATABASE_PROVIDER`: postgresql or mysql
 - `DATABASE_CONNECTION_URI`: Database connection string
 - `AUTHENTICATION_API_KEY`: Global API authentication
 - `REDIS_ENABLED`: Enable Redis cache
 - `RABBITMQ_ENABLED`/`SQS_ENABLED`: Message queue options
 
-## Development Guidelines
+## Code Standards
 
-The project follows comprehensive development standards defined in `.cursor/rules/`:
-
-### Core Principles
-- **Always respond in Portuguese (PT-BR)** for user communication
-- **Follow established architecture patterns** (Service Layer, RouterBroker, etc.)
-- **Robust error handling** with retry logic and graceful degradation
-- **Multi-database compatibility** (PostgreSQL and MySQL)
-- **Security-first approach** with input validation and rate limiting
-- **Performance optimizations** with Redis caching and connection pooling
-
-### Code Standards
-- **TypeScript strict mode** with full type coverage
+- **TypeScript strict mode** - avoid `any` type
 - **JSONSchema7** for input validation (not class-validator)
-- **Conventional Commits** enforced by commitlint
-- **ESLint + Prettier** for code formatting
-- **Service Object pattern** for business logic
-- **RouterBroker pattern** for route handling with `dataValidate`
-
-### Architecture Patterns
-- **Multi-tenant isolation** at database and instance level
-- **Event-driven communication** with EventEmitter2
-- **Microservices integration** pattern for external services
-- **Connection pooling** and lifecycle management
-- **Caching strategy** with Redis primary and Node-cache fallback
-
-## Testing Approach
-
-Currently, the project has minimal formal testing infrastructure:
-- **Manual testing** is the primary approach
-- **Integration testing** in development environment
-- **No unit test suite** currently implemented
-- Test files can be placed in `test/` directory as `*.test.ts`
-- Run `npm test` for watch mode development testing
-
-### Recommended Testing Strategy
-- Focus on **critical business logic** in services
-- **Mock external dependencies** (WhatsApp APIs, databases)
-- **Integration tests** for API endpoints
-- **Manual testing** for WhatsApp connection flows
-
-## Deployment Considerations
-
-- Docker support with `Dockerfile` and `docker-compose.yaml`
-- Graceful shutdown handling for connections
-- Health check endpoints for monitoring
-- Sentry integration for error tracking
-- Telemetry for usage analytics (non-sensitive data only)
+- **Conventional Commits** enforced by commitlint (`npm run commit` for guided commits)
+- **ESLint + Prettier** for formatting
+- **Logger class** instead of console.log
+- **Portuguese (PT-BR)** for user-facing error messages; English for code/comments

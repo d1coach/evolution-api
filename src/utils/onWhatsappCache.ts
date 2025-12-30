@@ -62,7 +62,8 @@ function getAvailableNumbers(remoteJid: string) {
 interface ISaveOnWhatsappCacheParams {
   remoteJid: string;
   remoteJidAlt?: string;
-  lid?: 'lid' | undefined;
+  /** The actual LID value (e.g., "123456789@lid") or undefined */
+  lid?: string;
 }
 
 function normalizeJid(jid: string | null | undefined): string | null {
@@ -126,7 +127,8 @@ export async function saveOnWhatsappCache(data: ISaveOnWhatsappCacheParams[]) {
       // Ordena os JIDs para garantir consistência na string final
       const sortedJidOptions = [...finalJidOptions].sort();
       const newJidOptionsString = sortedJidOptions.join(',');
-      const newLid = item.lid === 'lid' || item.remoteJid?.includes('@lid') ? 'lid' : null;
+      // Store actual LID value, or use remoteJid if it's already in @lid format
+      const newLid = item.lid || (item.remoteJid?.includes('@lid') ? item.remoteJid : null);
 
       const dataPayload = {
         remoteJid: remoteJid,

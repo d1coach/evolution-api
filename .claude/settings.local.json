@@ -1,0 +1,16 @@
+{
+  "permissions": {
+    "allow": [
+      "WebSearch",
+      "WebFetch(domain:baileys.wiki)",
+      "Bash(npm run lint:check:*)",
+      "Bash(npx tsc:*)",
+      "Bash(wc:*)",
+      "Bash(grep:*)",
+      "WebFetch(domain:easypanel.io)",
+      "WebFetch(domain:github.com)",
+      "WebFetch(domain:deepwiki.com)",
+      "WebFetch(domain:raw.githubusercontent.com)"
+    ]
+  }
+}

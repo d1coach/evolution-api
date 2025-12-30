@@ -7,12 +7,21 @@ import {
   WAReadReceiptsValue,
 } from 'baileys';
 
+/**
+ * Response DTO for WhatsApp number verification.
+ * Returns information about whether a phone number is registered on WhatsApp.
+ */
 export class OnWhatsAppDto {
   constructor(
+    /** The JID (Jabber ID) of the WhatsApp account, e.g., "5511999999999@s.whatsapp.net" */
     public readonly jid: string,
+    /** Whether the number is registered on WhatsApp */
     public readonly exists: boolean,
+    /** The original phone number that was queried */
     public readonly number: string,
+    /** The push name (display name) of the contact, if available */
     public readonly name?: string,
+    /** The LID (Link ID) of the account, e.g., "123456789012345@lid". Used for privacy-preserving identification. */
     public readonly lid?: string,
   ) {}
 }

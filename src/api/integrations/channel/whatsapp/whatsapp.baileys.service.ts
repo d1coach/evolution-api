@@ -1808,6 +1808,52 @@ export class BaileysStartupService extends ChannelStartupService {
 
       this.updateGroupMetadataCache(participantsUpdate.id);
     },
+
+    'group.join-request': async (joinRequest: {
+      id: string;
+      author: string;
+      authorPn?: string;
+      participant: string;
+      participantPn?: string;
+      action: 'created' | 'revoked' | 'rejected';
+      method: 'invite_link' | 'linked_group_join' | 'non_admin_add' | undefined;
+    }) => {
+      // Enrich requester data with pn, jid, and lid
+      const participantJid = joinRequest.participant;
+      let participantLid: string | undefined;
+      let participantPn = joinRequest.participantPn;
+
+      // Extract phone number from JID if not provided
+      if (!participantPn && participantJid) {
+        participantPn = participantJid.split('@')[0];
+      }
+
+      // Resolve LID for the participant
+      try {
+        if (participantJid && !participantJid.includes('@lid')) {
+          const lidResults = await this.client.signalRepository.lidMapping.getLIDsForPNs([participantJid]);
+          if (lidResults && lidResults.length > 0) {
+            participantLid = lidResults[0].lid;
+          }
+        } else if (participantJid?.includes('@lid')) {
+          participantLid = participantJid; // Already is the LID
+        }
+      } catch (error) {
+        this.logger.warn(`Failed to resolve LID for join request participant: ${error?.message}`);
+      }
+
+      const enhancedJoinRequest = {
+        ...joinRequest,
+        // Enriched requester data
+        requesterData: {
+          jid: participantJid,
+          pn: participantPn,
+          lid: participantLid,
+        },
+      };
+
+      this.sendDataWebhook(Events.GROUP_JOIN_REQUEST, enhancedJoinRequest);
+    },
   };
 
   private readonly labelHandle = {
@@ -1965,6 +2011,11 @@ export class BaileysStartupService extends ChannelStartupService {
               if (events['group-participants.update']) {
                 const payload = events['group-participants.update'] as any;
                 this.groupHandler['group-participants.update'](payload);
+              }
+
+              if (events['group.join-request']) {
+                const payload = events['group.join-request'];
+                this.groupHandler['group.join-request'](payload);
               }
             }
 
@@ -3566,6 +3617,27 @@ export class BaileysStartupService extends ChannelStartupService {
       verify = await this.client.onWhatsApp(...normalNumbersNotInCache);
     }
 
+    // Resolve LIDs for verified numbers
+    const lidMappings: Record<string, string> = {};
+    const verifiedJids = verify.filter((v) => v.exists).map((v) => v.jid);
+    if (verifiedJids.length > 0) {
+      try {
+        const lidResults = await this.client.signalRepository.lidMapping.getLIDsForPNs(verifiedJids);
+        if (lidResults) {
+          // Convert array of {pn, lid} to a lookup map by JID
+          for (const mapping of lidResults) {
+            // mapping.pn is the phone number, we need to match by JID format
+            const pnJid = mapping.pn.includes('@') ? mapping.pn : `${mapping.pn}@s.whatsapp.net`;
+            lidMappings[pnJid] = mapping.lid;
+          }
+        }
+        this.logger.verbose(`Resolved ${Object.keys(lidMappings).length} LIDs for verified numbers`);
+      } catch (error) {
+        this.logger.warn(`Failed to resolve LIDs: ${error?.message || error}`);
+        // Continue without LIDs - graceful degradation
+      }
+    }
+
     const verifiedUsers = await Promise.all(
       jids.users.map(async (user) => {
         // Try to get from cache first (works for all: normal and LID)
@@ -3578,7 +3650,7 @@ export class BaileysStartupService extends ChannelStartupService {
             true,
             user.number,
             contacts.find((c) => c.remoteJid === cached.remoteJid)?.pushName,
-            cached.lid || (cached.remoteJid.includes('@lid') ? 'lid' : undefined),
+            cached.lid || (cached.remoteJid.includes('@lid') ? cached.remoteJid : undefined),
           );
         }
 
@@ -3589,7 +3661,7 @@ export class BaileysStartupService extends ChannelStartupService {
             true,
             user.number,
             contacts.find((c) => c.remoteJid === user.jid)?.pushName,
-            'lid',
+            user.jid, // The JID itself is the LID
           );
         }
 
@@ -3644,7 +3716,7 @@ export class BaileysStartupService extends ChannelStartupService {
           !!numberVerified?.exists,
           user.number,
           contacts.find((c) => c.remoteJid === numberJid)?.pushName,
-          undefined,
+          lidMappings[numberJid] || undefined,
         );
       }),
     );
@@ -3665,7 +3737,7 @@ export class BaileysStartupService extends ChannelStartupService {
       await saveOnWhatsappCache(
         numbersToCache.map((user) => ({
           remoteJid: user.jid,
-          lid: user.lid === 'lid' ? 'lid' : undefined,
+          lid: user.lid || undefined,
         })),
       );
     }

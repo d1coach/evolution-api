@@ -15,7 +15,8 @@
       "Bash(find:*)",
       "WebFetch(domain:api.github.com)",
       "Bash(git config:*)",
-      "Bash(head:*)"
+      "Bash(head:*)",
+      "Bash(node --version:*)"
     ]
   }
 }

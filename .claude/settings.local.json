@@ -12,7 +12,10 @@
       "WebFetch(domain:deepwiki.com)",
       "WebFetch(domain:raw.githubusercontent.com)",
       "Bash(npm run build:*)",
-      "Bash(find:*)"
+      "Bash(find:*)",
+      "WebFetch(domain:api.github.com)",
+      "Bash(git config:*)",
+      "Bash(head:*)"
     ]
   }
 }

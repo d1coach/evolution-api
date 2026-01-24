@@ -1,10 +1,14 @@
 # Repo
 Baileys
-# compiled output
+
+# Compiled output
 /dist
 /node_modules
 
+# Docker
 /Docker/.env
+/docker-compose-data
+/docker-data
 
 # Logs
 logs/**.json
@@ -15,10 +19,7 @@ yarn-debug.log*
 yarn-error.log*
 lerna-debug.log*
 
-/docker-compose-data
-/docker-data
-
-# Package
+# Package manager locks (keep package-lock.json)
 /yarn.lock
 /pnpm-lock.yaml
 
@@ -30,6 +31,8 @@ lerna-debug.log*
 !.vscode/extensions.json
 .nova/*
 .idea/*
+*.swp
+*.swo
 
 # Project related
 /instances/*
@@ -38,11 +41,52 @@ lerna-debug.log*
 /src/env.yml
 /store
 *.env
+!.env.example
 
 /temp/*
 
+# OS files
 .DS_Store
 *.DS_Store
-.tool-versions
+Thumbs.db
 
+# Tool versions
+.tool-versions
+.nvmrc
+
+# Database
 /prisma/migrations/*
+*.sqlite
+*.sqlite3
+*.db
+
+# Test coverage
+/coverage
+/.nyc_output
+
+# Claude Code (user-specific data)
+.claude/
+.claude-user/
+
+# Cache and local state
+.cache/
+.local/
+
+# Runtime data
+pids
+*.pid
+*.seed
+*.pid.lock
+
+# Secrets and credentials (never commit these)
+*.pem
+*.key
+*.crt
+.credentials.json
+credentials.json
+secrets.json
+*.secret
+
+# Replit
+.replit
+replit.nix

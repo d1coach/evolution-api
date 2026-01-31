@@ -155,6 +155,7 @@ export class EventController {
     'CHATS_DELETE',
     'GROUPS_UPSERT',
     'GROUPS_UPDATE',
+    'GROUP_UPDATE', // Deprecated: alias for GROUPS_UPDATE, kept for Evolution Manager compatibility
     'GROUP_PARTICIPANTS_UPDATE',
     'GROUP_JOIN_REQUEST',
     'CONNECTION_UPDATE',
@@ -163,6 +164,7 @@ export class EventController {
     'CALL',
     'TYPEBOT_START',
     'TYPEBOT_CHANGE_STATUS',
+    'NEW_JWT_TOKEN',
     'REMOVE_INSTANCE',
     'LOGOUT_INSTANCE',
     'INSTANCE_CREATE',

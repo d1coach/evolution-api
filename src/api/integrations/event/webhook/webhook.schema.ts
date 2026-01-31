@@ -3,25 +3,6 @@ import { v4 } from 'uuid';
 
 import { EventController } from '../event.controller';
 
-const isNotEmpty = (...propertyNames: string[]): JSONSchema7 => {
-  const properties = {};
-  propertyNames.forEach(
-    (property) =>
-      (properties[property] = {
-        minLength: 1,
-        description: `The "${property}" cannot be empty`,
-      }),
-  );
-  return {
-    if: {
-      propertyNames: {
-        enum: [...propertyNames],
-      },
-    },
-    then: { properties },
-  };
-};
-
 export const webhookSchema: JSONSchema7 = {
   $id: v4(),
   type: 'object',
@@ -43,8 +24,16 @@ export const webhookSchema: JSONSchema7 = {
           },
         },
       },
-      required: ['enabled', 'url'],
-      ...isNotEmpty('enabled', 'url'),
+      required: ['enabled'],
+      if: {
+        properties: { enabled: { const: true } },
+      },
+      then: {
+        required: ['url'],
+        properties: {
+          url: { minLength: 1, description: 'The "url" cannot be empty when webhook is enabled' },
+        },
+      },
     },
   },
   required: ['webhook'],

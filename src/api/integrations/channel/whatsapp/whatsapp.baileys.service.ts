@@ -4655,11 +4655,7 @@ export class BaileysStartupService extends ChannelStartupService {
   public async updateJoinRequest(update: GroupUpdateJoinRequestDto) {
     try {
       const participants = update.participants.map((p) => createJid(p));
-      const result = await this.client.groupRequestParticipantsUpdate(
-        update.groupJid,
-        participants,
-        update.action,
-      );
+      const result = await this.client.groupRequestParticipantsUpdate(update.groupJid, participants, update.action);
       return { updateJoinRequest: result };
     } catch (error) {
       throw new BadRequestException('Error updating join request', error.toString());

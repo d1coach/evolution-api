@@ -98,6 +98,16 @@ export class GroupRouter extends RouterBroker {
 
         res.status(HttpStatus.OK).json(response);
       })
+      .get(this.routerPath('fetchSubgroupsCommunity'), ...guards, async (req, res) => {
+        const response = await this.groupValidate<GroupJid>({
+          request: req,
+          schema: groupJidSchema,
+          ClassRef: GroupJid,
+          execute: (instance, data) => groupController.fetchSubgroupsCommunity(instance, data),
+        });
+
+        res.status(HttpStatus.OK).json(response);
+      })
       .get(this.routerPath('participants'), ...guards, async (req, res) => {
         const response = await this.groupValidate<GroupJid>({
           request: req,

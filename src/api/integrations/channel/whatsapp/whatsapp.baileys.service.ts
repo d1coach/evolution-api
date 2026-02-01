@@ -4553,6 +4553,30 @@ export class BaileysStartupService extends ChannelStartupService {
     return groups;
   }
 
+  public async fetchSubgroupsCommunity(id: GroupJid) {
+    try {
+      const result = await this.client.communityFetchLinkedGroups(id.groupJid);
+
+      const groups = [];
+      for (const group of result.linkedGroups || []) {
+        const picture = await this.profilePicture(group.id);
+
+        groups.push({
+          id: group.id,
+          subject: group.subject,
+          creation: group.creation,
+          owner: group.owner,
+          size: group.size,
+          pictureUrl: picture?.profilePictureUrl,
+        });
+      }
+
+      return groups;
+    } catch (error) {
+      throw new NotFoundException('Error fetching community subgroups', error.toString());
+    }
+  }
+
   public async inviteCode(id: GroupJid) {
     try {
       const code = await this.client.groupInviteCode(id.groupJid);

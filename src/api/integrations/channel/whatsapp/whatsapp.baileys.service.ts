@@ -4662,6 +4662,15 @@ export class BaileysStartupService extends ChannelStartupService {
     }
   }
 
+  public async listJoinRequests(id: GroupJid) {
+    try {
+      const participants = await this.client.groupRequestParticipantsList(id.groupJid);
+      return { participants };
+    } catch (error) {
+      throw new BadRequestException('Error listing join requests', error.toString());
+    }
+  }
+
   public async updateGSetting(update: GroupUpdateSettingDto) {
     try {
       const updateSetting = await this.client.groupSettingUpdate(update.groupJid, update.action);

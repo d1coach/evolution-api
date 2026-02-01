@@ -178,6 +178,16 @@ export class GroupRouter extends RouterBroker {
 
         res.status(HttpStatus.OK).json(response);
       })
+      .get(this.routerPath('listJoinRequests'), ...guards, async (req, res) => {
+        const response = await this.groupValidate<GroupJid>({
+          request: req,
+          schema: groupJidSchema,
+          ClassRef: GroupJid,
+          execute: (instance, data) => groupController.listJoinRequests(instance, data),
+        });
+
+        res.status(HttpStatus.OK).json(response);
+      })
       .post(this.routerPath('updateSetting'), ...guards, async (req, res) => {
         const response = await this.groupValidate<GroupUpdateSettingDto>({
           request: req,

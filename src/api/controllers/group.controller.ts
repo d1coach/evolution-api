@@ -75,6 +75,10 @@ export class GroupController {
     return await this.waMonitor.waInstances[instance.instanceName].updateJoinRequest(update);
   }
 
+  public async listJoinRequests(instance: InstanceDto, groupJid: GroupJid) {
+    return await this.waMonitor.waInstances[instance.instanceName].listJoinRequests(groupJid);
+  }
+
   public async updateGSetting(instance: InstanceDto, update: GroupUpdateSettingDto) {
     return await this.waMonitor.waInstances[instance.instanceName].updateGSetting(update);
   }

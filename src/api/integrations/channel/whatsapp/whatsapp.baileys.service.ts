@@ -4728,6 +4728,24 @@ export class BaileysStartupService extends ChannelStartupService {
     }
   }
 
+  public async updateMemberAddMode(update: { groupJid: string; mode: 'admin_add' | 'all_member_add' }) {
+    try {
+      await this.client.groupMemberAddMode(update.groupJid, update.mode);
+      return { success: true, mode: update.mode };
+    } catch (error) {
+      throw new BadRequestException('Error updating member add mode', error.toString());
+    }
+  }
+
+  public async updateJoinApprovalMode(update: { groupJid: string; mode: 'on' | 'off' }) {
+    try {
+      await this.client.groupJoinApprovalMode(update.groupJid, update.mode);
+      return { success: true, mode: update.mode };
+    } catch (error) {
+      throw new BadRequestException('Error updating join approval mode', error.toString());
+    }
+  }
+
   public async toggleEphemeral(update: GroupToggleEphemeralDto) {
     try {
       await this.client.groupToggleEphemeral(update.groupJid, update.expiration);

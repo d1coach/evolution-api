@@ -59,3 +59,11 @@ export class GroupUpdateSettingDto extends GroupJid {
 export class GroupToggleEphemeralDto extends GroupJid {
   expiration: 0 | 86400 | 604800 | 7776000;
 }
+
+export class GroupMemberAddModeDto extends GroupJid {
+  mode: 'admin_add' | 'all_member_add';
+}
+
+export class GroupJoinApprovalModeDto extends GroupJid {
+  mode: 'on' | 'off';
+}

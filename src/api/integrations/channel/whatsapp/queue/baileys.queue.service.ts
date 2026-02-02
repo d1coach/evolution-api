@@ -30,7 +30,7 @@ export class BaileysQueueService {
   ) {
     this.logger = new Logger(`BaileysQueue:${instanceName}`);
     this.conf = configService.get<RateLimitConf>('RATE_LIMIT');
-    this.queueName = `baileys:${instanceId}`;
+    this.queueName = `baileys_${instanceId}`;
     this.initialize();
   }
 

@@ -31,7 +31,7 @@ export class BaileysQueueWorker {
   ) {
     this.logger = new Logger(`BaileysWorker:${instanceName}`);
     this.conf = configService.get<RateLimitConf>('RATE_LIMIT');
-    this.queueName = `baileys:${instanceId}`;
+    this.queueName = `baileys_${instanceId}`;
   }
 
   public setClient(client: WASocket): void {

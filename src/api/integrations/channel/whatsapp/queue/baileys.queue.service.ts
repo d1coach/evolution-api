@@ -71,7 +71,8 @@ export class BaileysQueueService {
   }
 
   public isQueueEnabled(): boolean {
-    return this.queue !== null && bullmqConnection.isConnected();
+    // Use isAvailable() instead of isConnected() - BullMQ handles connection state internally
+    return this.queue !== null && bullmqConnection.isAvailable();
   }
 
   /**

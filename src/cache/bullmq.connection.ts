@@ -21,12 +21,22 @@ class BullMQConnection {
     return this.connected && this.client !== null;
   }
 
+  /**
+   * Check if connection is available (client exists).
+   * BullMQ handles connection state internally, so we don't need to wait for 'ready'.
+   */
+  public isAvailable(): boolean {
+    return this.client !== null;
+  }
+
   public getConnection(): Redis | null {
     if (!this.isEnabled()) {
       return null;
     }
 
-    if (this.connected && this.client) {
+    // Return existing client if available (even if still connecting)
+    // BullMQ handles the connection state internally
+    if (this.client) {
       return this.client;
     }
 

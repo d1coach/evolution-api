@@ -4892,7 +4892,9 @@ export class BaileysStartupService extends ChannelStartupService {
       messageType: contentType || 'unknown',
       messageTimestamp: Long.isLong(message.messageTimestamp)
         ? message.messageTimestamp.toNumber()
-        : (message.messageTimestamp as number),
+        : typeof message.messageTimestamp === 'string'
+          ? parseInt(message.messageTimestamp, 10)
+          : (message.messageTimestamp as number),
       instanceId: this.instanceId,
       source: getDevice(message.key.id),
     };

@@ -7,12 +7,14 @@ import { Job, Worker } from 'bullmq';
 import {
   GroupMetadataJobData,
   JobType,
+  ListJoinRequestsJobData,
   OnWhatsAppJobData,
   QueueJobData,
   QueueJobResult,
   ReadMessagesJobData,
   SendMessageJobData,
   SendPresenceJobData,
+  UpdateJoinRequestJobData,
 } from './baileys.queue.types';
 
 export class BaileysQueueWorker {
@@ -121,6 +123,12 @@ export class BaileysQueueWorker {
         case JobType.ON_WHATSAPP:
           return await this.processOnWhatsApp(data as OnWhatsAppJobData);
 
+        case JobType.LIST_JOIN_REQUESTS:
+          return await this.processListJoinRequests(data as ListJoinRequestsJobData);
+
+        case JobType.UPDATE_JOIN_REQUEST:
+          return await this.processUpdateJoinRequest(data as UpdateJoinRequestJobData);
+
         default:
           return { success: false, error: 'Unknown job type', retryable: false };
       }
@@ -166,6 +174,18 @@ export class BaileysQueueWorker {
 
   private async processOnWhatsApp(data: OnWhatsAppJobData): Promise<QueueJobResult> {
     const result = await this.client!.onWhatsApp(data.jid);
+    this.resetBackoffOnSuccess();
+    return { success: true, data: result };
+  }
+
+  private async processListJoinRequests(data: ListJoinRequestsJobData): Promise<QueueJobResult> {
+    const participants = await this.client!.groupRequestParticipantsList(data.groupJid);
+    this.resetBackoffOnSuccess();
+    return { success: true, data: participants };
+  }
+
+  private async processUpdateJoinRequest(data: UpdateJoinRequestJobData): Promise<QueueJobResult> {
+    const result = await this.client!.groupRequestParticipantsUpdate(data.groupJid, data.participants, data.action);
     this.resetBackoffOnSuccess();
     return { success: true, data: result };
   }

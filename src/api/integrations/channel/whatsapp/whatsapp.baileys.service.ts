@@ -4771,6 +4771,29 @@ export class BaileysStartupService extends ChannelStartupService {
   public async updateJoinRequest(update: GroupUpdateJoinRequestDto) {
     try {
       const participants = update.participants.map((p) => createJid(p));
+      const rateLimitConf = this.configService.get<RateLimitConf>('RATE_LIMIT');
+
+      if (this.queueService?.isQueueEnabled()) {
+        try {
+          const job = await this.queueService.addUpdateJoinRequestJob(update.groupJid, participants, update.action);
+          if (job) {
+            const result = await this.queueService.waitForJob(job);
+            if (result.success && result.data) {
+              return { updateJoinRequest: result.data };
+            }
+            if (!rateLimitConf?.FALLBACK_ENABLED) {
+              throw new Error(result.error || 'Queue job failed');
+            }
+            this.logger.warn(`Queue job failed, falling back to direct call: ${result.error}`);
+          }
+        } catch (error) {
+          if (!rateLimitConf?.FALLBACK_ENABLED) {
+            throw error;
+          }
+          this.logger.warn(`Queue error, falling back to direct call: ${error}`);
+        }
+      }
+
       const result = await this.client.groupRequestParticipantsUpdate(update.groupJid, participants, update.action);
       return { updateJoinRequest: result };
     } catch (error) {
@@ -4780,6 +4803,29 @@ export class BaileysStartupService extends ChannelStartupService {
 
   public async listJoinRequests(id: GroupJid) {
     try {
+      const rateLimitConf = this.configService.get<RateLimitConf>('RATE_LIMIT');
+
+      if (this.queueService?.isQueueEnabled()) {
+        try {
+          const job = await this.queueService.addListJoinRequestsJob(id.groupJid);
+          if (job) {
+            const result = await this.queueService.waitForJob(job);
+            if (result.success && result.data) {
+              return { participants: result.data };
+            }
+            if (!rateLimitConf?.FALLBACK_ENABLED) {
+              throw new Error(result.error || 'Queue job failed');
+            }
+            this.logger.warn(`Queue job failed, falling back to direct call: ${result.error}`);
+          }
+        } catch (error) {
+          if (!rateLimitConf?.FALLBACK_ENABLED) {
+            throw error;
+          }
+          this.logger.warn(`Queue error, falling back to direct call: ${error}`);
+        }
+      }
+
       const participants = await this.client.groupRequestParticipantsList(id.groupJid);
       return { participants };
     } catch (error) {

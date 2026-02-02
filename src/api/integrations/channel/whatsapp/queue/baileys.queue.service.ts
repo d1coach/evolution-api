@@ -7,6 +7,7 @@ import { Job, Queue, QueueEvents } from 'bullmq';
 import {
   GroupMetadataJobData,
   JobType,
+  ListJoinRequestsJobData,
   OnWhatsAppJobData,
   QueueJobData,
   QueueJobResult,
@@ -15,6 +16,7 @@ import {
   ReadMessagesJobData,
   SendMessageJobData,
   SendPresenceJobData,
+  UpdateJoinRequestJobData,
 } from './baileys.queue.types';
 
 export class BaileysQueueService {
@@ -231,6 +233,62 @@ export class BaileysQueueService {
       return job;
     } catch (error) {
       this.logger.error(`Failed to add onWhatsApp job: ${error}`);
+      return null;
+    }
+  }
+
+  public async addListJoinRequestsJob(groupJid: string): Promise<Job<QueueJobData, QueueJobResult> | null> {
+    if (!this.isQueueEnabled()) {
+      return null;
+    }
+
+    const jobData: ListJoinRequestsJobData = {
+      type: JobType.LIST_JOIN_REQUESTS,
+      groupJid,
+    };
+
+    const delay = this.calculateJitteredDelay(this.conf.MESSAGE_DELAY_MS);
+
+    try {
+      const job = await this.queue!.add(JobType.LIST_JOIN_REQUESTS, jobData, {
+        priority: QueuePriority.METADATA,
+        delay,
+      });
+      this.logger.verbose(`Added list join requests job: ${job.id} to ${groupJid} (delay: ${delay}ms)`);
+      return job;
+    } catch (error) {
+      this.logger.error(`Failed to add list join requests job: ${error}`);
+      return null;
+    }
+  }
+
+  public async addUpdateJoinRequestJob(
+    groupJid: string,
+    participants: string[],
+    action: 'approve' | 'reject',
+  ): Promise<Job<QueueJobData, QueueJobResult> | null> {
+    if (!this.isQueueEnabled()) {
+      return null;
+    }
+
+    const jobData: UpdateJoinRequestJobData = {
+      type: JobType.UPDATE_JOIN_REQUEST,
+      groupJid,
+      participants,
+      action,
+    };
+
+    const delay = this.calculateJitteredDelay(this.conf.MESSAGE_DELAY_MS);
+
+    try {
+      const job = await this.queue!.add(JobType.UPDATE_JOIN_REQUEST, jobData, {
+        priority: QueuePriority.OUTGOING,
+        delay,
+      });
+      this.logger.verbose(`Added update join request job: ${job.id} to ${groupJid} (delay: ${delay}ms)`);
+      return job;
+    } catch (error) {
+      this.logger.error(`Failed to add update join request job: ${error}`);
       return null;
     }
   }

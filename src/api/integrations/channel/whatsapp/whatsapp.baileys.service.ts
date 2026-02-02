@@ -74,6 +74,7 @@ import {
   Openai,
   ProviderSession,
   QrCode,
+  RateLimitConf,
   S3,
 } from '@config/env.config';
 import { BadRequestException, InternalServerErrorException, NotFoundException } from '@exceptions';
@@ -154,6 +155,7 @@ import { PassThrough, Readable } from 'stream';
 import { v4 } from 'uuid';
 
 import { BaileysMessageProcessor } from './baileysMessage.processor';
+import { BaileysQueueService, BaileysQueueWorker } from './queue';
 import { useVoiceCallsBaileys } from './voiceCalls/useVoiceCallsBaileys';
 
 export interface ExtendedIMessageKey extends proto.IMessageKey {
@@ -252,6 +254,8 @@ export class BaileysStartupService extends ChannelStartupService {
   private endSession = false;
   private logBaileys = this.configService.get<Log>('LOG').BAILEYS;
   private eventProcessingQueue: Promise<void> = Promise.resolve();
+  private queueService: BaileysQueueService | null = null;
+  private queueWorker: BaileysQueueWorker | null = null;
 
   // Cache TTL constants (in seconds)
   private readonly MESSAGE_CACHE_TTL_SECONDS = 5 * 60; // 5 minutes - avoid duplicate message processing
@@ -267,6 +271,12 @@ export class BaileysStartupService extends ChannelStartupService {
 
   public async logoutInstance() {
     this.messageProcessor.onDestroy();
+
+    await this.queueWorker?.close();
+    await this.queueService?.close();
+    this.queueWorker = null;
+    this.queueService = null;
+
     await this.client?.logout('Log out instance: ' + this.instanceName);
 
     this.client?.ws?.close();
@@ -698,6 +708,8 @@ export class BaileysStartupService extends ChannelStartupService {
 
     this.client = makeWASocket(socketConfig);
 
+    this.initializeQueue();
+
     if (this.localSettings.wavoipToken && this.localSettings.wavoipToken.length > 0) {
       useVoiceCallsBaileys(this.localSettings.wavoipToken, this.client, this.connectionStatus.state as any, true);
     }
@@ -719,6 +731,62 @@ export class BaileysStartupService extends ChannelStartupService {
     this.phoneNumber = number;
 
     return this.client;
+  }
+
+  private initializeQueue(): void {
+    const rateLimitConf = this.configService.get<RateLimitConf>('RATE_LIMIT');
+    if (!rateLimitConf?.ENABLED || !this.instanceId) {
+      return;
+    }
+
+    try {
+      if (!this.queueService) {
+        this.queueService = new BaileysQueueService(this.instanceName, this.instanceId);
+      }
+
+      if (!this.queueWorker) {
+        this.queueWorker = new BaileysQueueWorker(this.instanceName, this.instanceId);
+      }
+
+      this.queueWorker.setClient(this.client);
+      this.logger.verbose('Rate limiting queue initialized');
+    } catch (error) {
+      this.logger.error(`Failed to initialize rate limiting queue: ${error}`);
+      this.queueService = null;
+      this.queueWorker = null;
+    }
+  }
+
+  private async sendMessageViaQueue(
+    sender: string,
+    message: AnyMessageContent,
+    options?: MiscMessageGenerationOptions,
+    isReply = false,
+  ): Promise<WAMessage> {
+    const rateLimitConf = this.configService.get<RateLimitConf>('RATE_LIMIT');
+
+    if (this.queueService?.isQueueEnabled()) {
+      try {
+        const job = await this.queueService.addSendMessageJob(sender, message, options, isReply);
+        if (job) {
+          const result = await this.queueService.waitForJob(job);
+          if (result.success && result.data) {
+            return result.data as WAMessage;
+          }
+          if (!rateLimitConf?.FALLBACK_ENABLED) {
+            throw new Error(result.error || 'Queue job failed');
+          }
+          this.logger.warn(`Queue job failed, falling back to direct send: ${result.error}`);
+        }
+      } catch (error) {
+        if (!rateLimitConf?.FALLBACK_ENABLED) {
+          throw error;
+        }
+        this.logger.warn(`Queue error, falling back to direct send: ${error}`);
+      }
+    }
+
+    return await this.client.sendMessage(sender, message, options);
   }
 
   public async connectToWhatsapp(number?: string): Promise<WASocket> {
@@ -2232,7 +2300,7 @@ export class BaileysStartupService extends ChannelStartupService {
       sender !== 'status@broadcast'
     ) {
       if (message['reactionMessage']) {
-        return await this.client.sendMessage(
+        return await this.sendMessageViaQueue(
           sender,
           {
             react: { text: message['reactionMessage']['text'], key: message['reactionMessage']['key'] },
@@ -2247,7 +2315,7 @@ export class BaileysStartupService extends ChannelStartupService {
     }
 
     if (message['conversation']) {
-      return await this.client.sendMessage(
+      return await this.sendMessageViaQueue(
         sender,
         {
           text: message['conversation'],
@@ -2260,7 +2328,7 @@ export class BaileysStartupService extends ChannelStartupService {
     }
 
     if (!message['audio'] && !message['poll'] && !message['sticker'] && sender != 'status@broadcast') {
-      return await this.client.sendMessage(
+      return await this.sendMessageViaQueue(
         sender,
         {
           forward: { key: { remoteJid: this.instance.wuid, fromMe: true }, message },
@@ -2296,7 +2364,7 @@ export class BaileysStartupService extends ChannelStartupService {
       const firstBatch = batches.shift();
 
       if (firstBatch) {
-        firstMessage = await this.client.sendMessage(
+        firstMessage = await this.sendMessageViaQueue(
           sender,
           message['status'].content as unknown as AnyMessageContent,
           {
@@ -2313,7 +2381,7 @@ export class BaileysStartupService extends ChannelStartupService {
 
       await Promise.allSettled(
         batches.map(async (batch) => {
-          const messageSent = await this.client.sendMessage(
+          const messageSent = await this.sendMessageViaQueue(
             sender,
             message['status'].content as unknown as AnyMessageContent,
             {
@@ -2331,7 +2399,7 @@ export class BaileysStartupService extends ChannelStartupService {
       return firstMessage;
     }
 
-    return await this.client.sendMessage(
+    return await this.sendMessageViaQueue(
       sender,
       message as unknown as AnyMessageContent,
       option as unknown as MiscMessageGenerationOptions,

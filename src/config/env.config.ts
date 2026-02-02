@@ -393,6 +393,23 @@ export type EventEmitter = {
   MAX_LISTENERS: number;
 };
 
+export type RateLimitConf = {
+  ENABLED: boolean;
+  REDIS_URI?: string;
+  MESSAGES_PER_MINUTE: number;
+  MESSAGE_DELAY_MS: number;
+  PRESENCE_PER_MINUTE: number;
+  METADATA_PER_MINUTE: number;
+  MAX_RETRIES: number;
+  INITIAL_BACKOFF_MS: number;
+  MAX_BACKOFF_MS: number;
+  BACKOFF_MULTIPLIER: number;
+  FALLBACK_ENABLED: boolean;
+  QUEUE_TIMEOUT_MS: number;
+  JITTER_FACTOR: number;
+  BACKOFF_JITTER_FACTOR: number;
+};
+
 export type Production = boolean;
 
 export interface Env {
@@ -432,6 +449,7 @@ export interface Env {
   FACEBOOK: Facebook;
   SENTRY: Sentry;
   EVENT_EMITTER: EventEmitter;
+  RATE_LIMIT: RateLimitConf;
   PRODUCTION?: Production;
 }
 
@@ -912,6 +930,22 @@ export class ConfigService {
       },
       EVENT_EMITTER: {
         MAX_LISTENERS: Number.parseInt(process.env?.EVENT_EMITTER_MAX_LISTENERS) || 50,
+      },
+      RATE_LIMIT: {
+        ENABLED: process.env?.RATE_LIMIT_ENABLED === 'true',
+        REDIS_URI: process.env?.RATE_LIMIT_REDIS_URI || process.env?.CACHE_REDIS_URI || '',
+        MESSAGES_PER_MINUTE: Number.parseInt(process.env?.RATE_LIMIT_MESSAGES_PER_MINUTE) || 40,
+        MESSAGE_DELAY_MS: Number.parseInt(process.env?.RATE_LIMIT_MESSAGE_DELAY_MS) || 1500,
+        PRESENCE_PER_MINUTE: Number.parseInt(process.env?.RATE_LIMIT_PRESENCE_PER_MINUTE) || 60,
+        METADATA_PER_MINUTE: Number.parseInt(process.env?.RATE_LIMIT_METADATA_PER_MINUTE) || 30,
+        MAX_RETRIES: Number.parseInt(process.env?.RATE_LIMIT_MAX_RETRIES) || 5,
+        INITIAL_BACKOFF_MS: Number.parseInt(process.env?.RATE_LIMIT_INITIAL_BACKOFF_MS) || 5000,
+        MAX_BACKOFF_MS: Number.parseInt(process.env?.RATE_LIMIT_MAX_BACKOFF_MS) || 300000,
+        BACKOFF_MULTIPLIER: Number.parseFloat(process.env?.RATE_LIMIT_BACKOFF_MULTIPLIER) || 2,
+        FALLBACK_ENABLED: process.env?.RATE_LIMIT_FALLBACK_ENABLED !== 'false',
+        QUEUE_TIMEOUT_MS: Number.parseInt(process.env?.RATE_LIMIT_QUEUE_TIMEOUT_MS) || 30000,
+        JITTER_FACTOR: Number.parseFloat(process.env?.RATE_LIMIT_JITTER_FACTOR) || 0.5,
+        BACKOFF_JITTER_FACTOR: Number.parseFloat(process.env?.RATE_LIMIT_BACKOFF_JITTER_FACTOR) || 0.25,
       },
     };
   }
